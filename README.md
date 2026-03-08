@@ -223,7 +223,7 @@ Invoke-RestMethod -Method Post `
 
 ```powershell
 $body = @{
-  query = "三一重工的前三大股东是谁？"
+  query = "三一重工的前三大股东是谁？"        #参考提问：1.哪些商品库存不足？2.销售部门有哪些员工？
   mode  = "hybrid"   # skill | hybrid | vector
   top_k = 8
   session_id = "demo-session-1"
