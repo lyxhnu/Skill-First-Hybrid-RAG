@@ -1,5 +1,5 @@
 # Skill-First Hybrid RAG
-
+![Architecture Diagram](15dc699c1a9a49f450de5946c27baff7.png)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2%2B-blue)](https://github.com/langchain-ai/langgraph)
@@ -269,6 +269,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/health"
 ## 致谢
 
 项目中 `skill` 设计与思路参考了 [ConardLi/rag-skill](https://github.com/ConardLi/rag-skill)。
+
 
 ## 许可证
 
