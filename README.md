@@ -333,11 +333,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/health"
 3. 切换 embedding provider/model 后重新执行 `/ingest`
 4. 异常定位优先看 `/health` 和 `/query` 的 `memory_trace/evidence_trace`
 
-## 当前边界
 
-1. 尚未实现通用 `xlsx -> sqlite -> SQL` 执行层
-2. 尚未实现通用 PDF 结构化规划执行器
-3. `confidence` 目前是检索链路分数，不等于答案正确率
 
 ## 致谢
 
@@ -347,4 +343,5 @@ Invoke-RestMethod "http://127.0.0.1:8000/health"
 ## 许可证
 
 本项目用于学习与工程实践演示。示例数据请按各自来源和使用条款处理。
+
 
