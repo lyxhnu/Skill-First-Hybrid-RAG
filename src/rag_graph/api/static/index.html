@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG Chat Console</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap");
+
+    :root {
+      --bg-main: #f4efe3;
+      --bg-soft: #f8f4ea;
+      --card: rgba(255, 255, 255, 0.72);
+      --text: #1f2a2e;
+      --muted: #5b6a70;
+      --accent: #0f8b8d;
+      --accent-2: #ef8354;
+      --border: rgba(31, 42, 46, 0.16);
+      --shadow: 0 18px 45px rgba(13, 27, 31, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 20%, #f9e8cf 0, transparent 36%),
+                  radial-gradient(circle at 75% 10%, #d1f0ef 0, transparent 34%),
+                  radial-gradient(circle at 80% 90%, #ffd8c2 0, transparent 32%),
+                  linear-gradient(140deg, #f7f3e8 0%, #ecebe5 100%);
+      font-family: "Noto Sans SC", "Manrope", sans-serif;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 999px;
+      opacity: 0.35;
+      filter: blur(20px);
+      animation: drift 16s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .orb.one {
+      width: 260px;
+      height: 260px;
+      background: #8ad8d9;
+      left: -50px;
+      top: 35%;
+    }
+
+    .orb.two {
+      width: 230px;
+      height: 230px;
+      background: #ffb089;
+      right: -60px;
+      top: 8%;
+      animation-delay: 1.8s;
+    }
+
+    @keyframes drift {
+      from { transform: translateY(-18px) translateX(0px); }
+      to { transform: translateY(22px) translateX(16px); }
+    }
+
+    .app {
+      max-width: 1160px;
+      height: calc(100% - 24px);
+      margin: 12px auto;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 12px;
+      padding: 0 12px;
+      opacity: 0;
+      animation: reveal .5s ease forwards;
+    }
+
+    @keyframes reveal {
+      to { opacity: 1; }
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .control {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .title {
+      font-family: "Manrope", "Noto Sans SC", sans-serif;
+      margin: 0;
+      font-size: 1.28rem;
+      letter-spacing: 0.02em;
+    }
+
+    .sub {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .label {
+      font-size: .86rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+    }
+
+    select {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: .92rem;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: "Manrope", "Noto Sans SC", sans-serif;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-main {
+      background: linear-gradient(90deg, var(--accent), #1f9ca0);
+      color: #fff;
+    }
+
+    .btn-alt {
+      background: linear-gradient(90deg, var(--accent-2), #f29d7a);
+      color: #fff;
+    }
+
+    .health {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.55);
+      font-size: .82rem;
+      color: #2f3c42;
+      line-height: 1.45;
+      white-space: pre-line;
+      min-height: 118px;
+    }
+
+    .chat {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 0;
+    }
+
+    .chat-head {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .chat-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-family: "Manrope", "Noto Sans SC", sans-serif;
+    }
+
+    .chat-head .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: .82rem;
+      text-align: right;
+    }
+
+    .messages {
+      padding: 16px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .msg {
+      max-width: min(780px, 90%);
+      border-radius: 14px;
+      padding: 11px 13px;
+      line-height: 1.58;
+      font-size: .95rem;
+      box-shadow: 0 8px 20px rgba(20, 32, 36, 0.08);
+      animation: pop .2s ease;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    @keyframes pop {
+      from { transform: translateY(6px); opacity: .5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #0f8b8d, #2da5a8);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.bot {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.93);
+      color: var(--text);
+      border: 1px solid rgba(31, 42, 46, 0.08);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg .meta {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(31, 42, 46, 0.16);
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.4;
+    }
+
+    .composer {
+      border-top: 1px solid var(--border);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    textarea {
+      min-height: 56px;
+      max-height: 170px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: .95rem;
+      font-family: "Noto Sans SC", "Manrope", sans-serif;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--text);
+      line-height: 1.45;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(15, 139, 141, 0.7);
+      box-shadow: 0 0 0 3px rgba(15, 139, 141, 0.15);
+    }
+
+    .send {
+      min-width: 120px;
+      height: 46px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, var(--accent), #0ca5a8);
+      color: #fff;
+      font-size: .92rem;
+    }
+
+    .typing {
+      opacity: .68;
+      font-style: italic;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: calc(100% - 14px);
+        margin: 7px auto;
+      }
+      .control {
+        padding: 14px;
+      }
+      .messages {
+        padding: 12px;
+      }
+      .msg {
+        max-width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="app">
+    <aside class="panel control">
+      <div>
+        <h1 class="title">RAG Chat Console</h1>
+        <p class="sub">Skill 定位 + 向量补召回 + LangGraph 编排</p>
+      </div>
+
+      <div class="field">
+        <label class="label" for="mode">检索模式</label>
+        <select id="mode">
+          <option value="hybrid">hybrid（默认）</option>
+          <option value="skill">skill（仅 skill）</option>
+          <option value="vector">vector（仅向量）</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="topk">Top K：<span id="topk-value">8</span></label>
+        <input id="topk" type="range" min="1" max="25" value="8">
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-ingest" class="btn-main" type="button">重建索引</button>
+        <button id="btn-session" class="btn-main" type="button">新会话</button>
+        <button id="btn-clear" class="btn-alt" type="button">清空窗口</button>
+      </div>
+
+      <div id="health" class="health">正在加载健康状态...</div>
+    </aside>
+
+    <section class="panel chat">
+      <header class="chat-head">
+        <h2>聊天窗口</h2>
+        <p class="hint">回车发送，Shift+回车换行</p>
+      </header>
+      <main id="messages" class="messages"></main>
+      <footer class="composer">
+        <textarea id="input" placeholder="输入你的问题，例如：2026年AI Agent技术有哪些关键趋势？"></textarea>
+        <button id="send" class="send" type="button">发送</button>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    const healthEl = document.getElementById("health");
+    const messagesEl = document.getElementById("messages");
+    const inputEl = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+    const modeEl = document.getElementById("mode");
+    const topkEl = document.getElementById("topk");
+    const topkValueEl = document.getElementById("topk-value");
+    const ingestBtn = document.getElementById("btn-ingest");
+    const sessionBtn = document.getElementById("btn-session");
+    const clearBtn = document.getElementById("btn-clear");
+
+    let pending = false;
+    let typingNode = null;
+    let actorId = ensureStableId("rag-actor-id", "actor");
+    let sessionId = ensureStableId("rag-session-id", "session");
+
+    function addMessage(role, text, meta = null) {
+      const node = document.createElement("article");
+      node.className = `msg ${role}`;
+      node.textContent = text;
+      if (meta) {
+        const metaNode = document.createElement("div");
+        metaNode.className = "meta";
+        metaNode.textContent = meta;
+        node.appendChild(metaNode);
+      }
+      messagesEl.appendChild(node);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return node;
+    }
+
+    function setTyping(show) {
+      if (show) {
+        if (typingNode) return;
+        typingNode = addMessage("bot", "正在检索并生成回答...", null);
+        typingNode.classList.add("typing");
+        return;
+      }
+      if (typingNode) {
+        typingNode.remove();
+        typingNode = null;
+      }
+    }
+
+    function normalizeError(err) {
+      if (typeof err === "string") return err;
+      if (err && err.message) return err.message;
+      return "请求失败，请检查服务是否启动。";
+    }
+
+    function ensureStableId(key, prefix) {
+      const existing = localStorage.getItem(key);
+      if (existing) return existing;
+      const created = `${prefix}-${crypto.randomUUID()}`;
+      localStorage.setItem(key, created);
+      return created;
+    }
+
+    function startNewSession() {
+      sessionId = `session-${crypto.randomUUID()}`;
+      localStorage.setItem("rag-session-id", sessionId);
+      messagesEl.innerHTML = "";
+      addMessage("bot", `已创建新会话：${sessionId.slice(0, 18)}...`);
+      refreshHealth();
+    }
+
+    async function refreshHealth() {
+      try {
+        const res = await fetch("/health");
+        if (!res.ok) throw new Error(`health status ${res.status}`);
+        const json = await res.json();
+        const p = json.payload || {};
+        healthEl.textContent =
+          `状态: ${p.status}\n` +
+          `chat: ${p.chat_provider}/${p.chat_model}\n` +
+          `embed: ${p.embed_provider}/${p.embed_model}\n` +
+          `rerank: ${p.rerank_provider}/${p.rerank_model}\n` +
+          `chunks: ${p.chunks_loaded}\n` +
+          `vector_dim: ${p.vector_dimension}\n` +
+          `actor: ${actorId}\n` +
+          `session: ${sessionId}`;
+      } catch (err) {
+        healthEl.textContent = `健康检查失败: ${normalizeError(err)}`;
+      }
+    }
+
+    async function runIngest() {
+      if (pending) return;
+      pending = true;
+      ingestBtn.disabled = true;
+      ingestBtn.textContent = "重建中...";
+      try {
+        const res = await fetch("/ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ force: false })
+        });
+        if (!res.ok) throw new Error(`ingest status ${res.status}`);
+        const json = await res.json();
+        const manifest = json.payload?.manifest || {};
+        addMessage("bot", "索引更新完成。", `files=${manifest.file_count || 0}, chunks=${manifest.chunk_count || 0}`);
+        await refreshHealth();
+      } catch (err) {
+        addMessage("bot", `索引更新失败：${normalizeError(err)}`);
+      } finally {
+        pending = false;
+        ingestBtn.disabled = false;
+        ingestBtn.textContent = "重建索引";
+      }
+    }
+
+    async function sendQuery() {
+      const text = inputEl.value.trim();
+      if (!text || pending) return;
+
+      addMessage("user", text);
+      inputEl.value = "";
+      pending = true;
+      sendBtn.disabled = true;
+      setTyping(true);
+
+      try {
+        const payload = {
+          query: text,
+          mode: modeEl.value,
+          top_k: Number(topkEl.value),
+          actor_id: actorId,
+          session_id: sessionId
+        };
+        const res = await fetch("/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const detail = await res.text();
+          throw new Error(`query status ${res.status}: ${detail}`);
+        }
+        const json = await res.json();
+        const p = json.payload || {};
+        const trace = p.evidence_trace || {};
+        const citations = Array.isArray(p.citations) ? p.citations : [];
+        const citationLine = citations.length
+          ? citations.map(c => `${shortenPath(c.source_path)} @ ${formatLocation(c.location)}`).join(" | ")
+          : "无引用";
+        const meta =
+          `session=${(p.session_id || sessionId)}\n` +
+          `mode=${p.mode || modeEl.value}, confidence=${(p.confidence || 0).toFixed(3)}\n` +
+          `skill=${trace.skill_hits || 0}, vector=${trace.vector_hits || 0}, rerank=${trace.reranked_hits || 0}\n` +
+          `window=${(p.memory_trace?.window_turn_ids || []).length}, summaries=${(p.memory_trace?.summary_block_ids || []).length}, long_term=${(p.memory_trace?.long_term_ids || []).length}\n` +
+          `citations: ${citationLine}`;
+        addMessage("bot", p.answer || "(空回答)", meta);
+      } catch (err) {
+        addMessage("bot", `请求失败：${normalizeError(err)}`);
+      } finally {
+        setTyping(false);
+        pending = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    function shortenPath(path) {
+      if (!path) return "unknown";
+      const parts = path.replaceAll("\\", "/").split("/");
+      return parts.slice(-2).join("/");
+    }
+
+    function formatLocation(location) {
+      if (!location || typeof location !== "object") return "n/a";
+      if (location.page) return `p.${location.page}`;
+      if (location.sheet_name && location.row_index) return `${location.sheet_name}#${location.row_index}`;
+      if (location.line_start) return `L${location.line_start}-${location.line_end || location.line_start}`;
+      return "n/a";
+    }
+
+    topkEl.addEventListener("input", () => {
+      topkValueEl.textContent = topkEl.value;
+    });
+
+    sendBtn.addEventListener("click", sendQuery);
+    inputEl.addEventListener("keydown", (evt) => {
+      if (evt.key === "Enter" && !evt.shiftKey) {
+        evt.preventDefault();
+        sendQuery();
+      }
+    });
+
+    ingestBtn.addEventListener("click", runIngest);
+    sessionBtn.addEventListener("click", startNewSession);
+    clearBtn.addEventListener("click", () => {
+      messagesEl.innerHTML = "";
+      addMessage("bot", "会话已清空。你可以继续提问。");
+    });
+
+    addMessage("bot", `聊天窗口已就绪。当前 session=${sessionId.slice(0, 18)}...，建议先点“重建索引”，然后开始提问。`);
+    refreshHealth();
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skill-hybrid-rag"
+version = "0.1.0"
+description = "Skill-first, vector-augmented RAG system orchestrated by LangGraph."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn>=0.30.0",
+  "pydantic>=2.8.0",
+  "pydantic-settings>=2.3.0",
+  "langgraph>=0.2.34",
+  "langchain-core>=0.3.0",
+  "pandas>=2.2.0",
+  "openpyxl>=3.1.0",
+  "pypdf>=4.2.0",
+  "numpy>=1.26.0",
+  "python-dotenv>=1.0.1",
+  "openai>=1.40.0",
+  "requests>=2.31.0"
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.40.0"]
+anthropic = ["anthropic>=0.34.0"]
+gemini = ["google-generativeai>=0.7.0"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,2 @@
+"""Model provider abstraction."""
+
