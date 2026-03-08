@@ -25,6 +25,7 @@
 
 ## 项目简介
 
+
 本项目是一个本地知识库 RAG 系统，核心思路是：
 
 1. 先用 `Skill` 做目录和文件级路由
@@ -44,7 +45,79 @@
 7. 多模型厂商支持（chat / embedding / rerank）
 8. 分层记忆（SlidingWindow + SummaryBlocks + LongTermMemory）
 9. Web 聊天页 + REST API
+##工作流
+下面这张是当前系统真实的在线问答主链路
+```mermaid
+flowchart TD
+    A["浏览器 / 调用方"] --> B["提交问题：POST /query"]
+    B --> C["服务入口：RAGService.query"]
+    C --> D["LangGraph 工作流"]
 
+    D --> E["加载记忆上下文（load_memory_context）<br/>读取短期窗口、摘要块、长期记忆<br/>按需改写为 effective_query"]
+    E --> F["分析问题（analyze_query）<br/>提取关键词、意图、答案形态<br/>生成强约束词 / 弱提示词<br/>选择候选 skills"]
+    F --> G["按知识目录路由（route_by_skill_index）<br/>基于 knowledge/*/data_structure.md<br/>先词法路由，再语义重排<br/>得到候选目录 / 候选文件"]
+    G --> H["细化检索计划（refine_query_plan）<br/>结合候选文件补充文件感知弱提示词"]
+    H --> I["执行 skill 检索（run_skill_retrieval）"]
+    I --> J["评估证据是否足够（assess_evidence）"]
+
+    J -->|mode=skill| L["证据融合（fuse_evidence）"]
+    J -->|mode=vector| K["执行向量检索（run_vector_retrieval）"]
+    J -->|mode=hybrid 且 skill 证据不足| K
+    J -->|mode=hybrid 且 skill 证据足够| L
+
+    K --> L["证据融合（fuse_evidence）<br/>按 skill_weight / vector_weight 融合去重"]
+    L --> M["证据重排（rerank_evidence）<br/>百炼 rerank / LLM fallback / 内置词法重排"]
+    M --> N["生成答案（generate_answer）<br/>没有证据直接拒答<br/>有证据才调用模型"]
+    N --> O["校验引用（verify_citations）<br/>引用必须来自当前证据池"]
+    O --> P["写回记忆（persist_memory）<br/>保存当前轮<br/>按阈值生成摘要块<br/>保守写入长期记忆"]
+    P --> Q["返回结果<br/>answer / citations / confidence<br/>effective_query / memory_trace / evidence_trace"]
+
+```
+检索子链路再展开一层
+```mermaid
+flowchart TD
+    A["执行 skill 检索"] --> B["SkillManager"]
+    B --> C["按 selected_skills 逐个执行"]
+
+    C --> D["主技能 rag-skill"]
+    C --> E["其他 skills"]
+
+    D --> F["Excel 结构化分析器<br/>命中 xlsx 时强制读取<br/>excel_reading.md + excel_analysis.md<br/>模型生成分析计划，pandas 执行"]
+    D --> G["Chunk 检索器 SkillRetriever<br/>只在 candidate_files 内检索<br/>PDF / Excel 自动补 references 元数据<br/>PDF 命中页补相邻页"]
+
+    F --> H["合并结构化证据 + 文本块证据"]
+    G --> H
+
+    E --> I["检索该 skill 的 SKILL.md / references / scripts"]
+
+    H --> J["得到 skill_evidence"]
+    I --> J
+
+    J --> K["若需要补召回，则执行向量检索<br/>默认仍受 candidate_files 约束"]
+
+    K --> L["进入融合、重排、生成答案"]
+
+```
+离线建库链路
+```mermaid
+flowchart TD
+    A["触发建库：POST /ingest"] --> B["扫描 knowledge/ 目录"]
+    B --> C["根据 manifest 比较文件哈希"]
+    C --> D["只重解析变化文件"]
+
+    D --> E["文本文件 MD / TXT<br/>按块切分<br/>保留行号范围"]
+    D --> F["PDF 文件<br/>先读取 pdf_reading.md<br/>优先同名 .txt sidecar<br/>否则用 pypdf 按页切分"]
+    D --> G["Excel 文件<br/>先读取 excel_reading.md + excel_analysis.md<br/>按 sheet / 行生成结构化块"]
+
+    E --> H["写入 parsed chunks"]
+    F --> H
+    G --> H
+
+    H --> I["重载 ChunkRepository 和 SkillRouter"]
+    I --> J["调用 EmbeddingGateway 生成向量矩阵"]
+    J --> K["写入向量索引 embedding_index.pkl<br/>记录 provider / model / dimension"]
+
+```
 ## 技术栈
 
 后端与编排：
@@ -274,3 +347,4 @@ Invoke-RestMethod "http://127.0.0.1:8000/health"
 ## 许可证
 
 本项目用于学习与工程实践演示。示例数据请按各自来源和使用条款处理。
+
