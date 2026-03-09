@@ -2,7 +2,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
-storage/parsed/
-storage/vector/
-storage/metadata/
-storage/memory/
+storage/
+.idea/
+.env

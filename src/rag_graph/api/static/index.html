@@ -443,6 +443,7 @@
           `embed: ${p.embed_provider}/${p.embed_model}\n` +
           `rerank: ${p.rerank_provider}/${p.rerank_model}\n` +
           `chunks: ${p.chunks_loaded}\n` +
+          `vector: ${p.vector_backend || "unknown"}\n` +
           `vector_dim: ${p.vector_dimension}\n` +
           `actor: ${actorId}\n` +
           `session: ${sessionId}`;
@@ -506,16 +507,32 @@
         const json = await res.json();
         const p = json.payload || {};
         const trace = p.evidence_trace || {};
+        const support = p.answer_support || {};
+        const csFeedback = p.customer_service_feedback || {};
         const citations = Array.isArray(p.citations) ? p.citations : [];
+        const evidencePreview = Array.isArray(p.evidence_preview) ? p.evidence_preview : [];
         const citationLine = citations.length
           ? citations.map(c => `${shortenPath(c.source_path)} @ ${formatLocation(c.location)}`).join(" | ")
           : "无引用";
+        const supportLine =
+          `support=${support.explicit ? "explicit" : "weak"}, max_score=${Number(support.max_support_score || 0).toFixed(3)}, threshold=${Number(support.threshold || 0).toFixed(3)}`;
+        const feedbackLine = csFeedback.captured
+          ? `customer_service_feedback: captured, gap_id=${csFeedback.gap_id || "unknown"}, hits=${csFeedback.hits || 1}`
+          : "customer_service_feedback: none";
+        const evidenceBlock = evidencePreview.length
+          ? `matched_evidence:\n${evidencePreview.map((item, index) =>
+              `${index + 1}. ${shortenPath(item.source_path)} @ ${formatLocation(item.location)} [${(item.score || 0).toFixed(3)}|${item.retrieval_source || "unknown"}] ${shortenSnippet(item.snippet || "", 120)}`
+            ).join("\n")}`
+          : "matched_evidence: none";
         const meta =
           `session=${(p.session_id || sessionId)}\n` +
           `mode=${p.mode || modeEl.value}, confidence=${(p.confidence || 0).toFixed(3)}\n` +
           `skill=${trace.skill_hits || 0}, vector=${trace.vector_hits || 0}, rerank=${trace.reranked_hits || 0}\n` +
+          `${supportLine}\n` +
           `window=${(p.memory_trace?.window_turn_ids || []).length}, summaries=${(p.memory_trace?.summary_block_ids || []).length}, long_term=${(p.memory_trace?.long_term_ids || []).length}\n` +
-          `citations: ${citationLine}`;
+          `${feedbackLine}\n` +
+          `citations: ${citationLine}\n` +
+          `${evidenceBlock}`;
         addMessage("bot", p.answer || "(空回答)", meta);
       } catch (err) {
         addMessage("bot", `请求失败：${normalizeError(err)}`);
@@ -539,6 +556,12 @@
       if (location.sheet_name && location.row_index) return `${location.sheet_name}#${location.row_index}`;
       if (location.line_start) return `L${location.line_start}-${location.line_end || location.line_start}`;
       return "n/a";
+    }
+
+    function shortenSnippet(text, maxLen) {
+      const value = String(text || "").replace(/\s+/g, " ").trim();
+      if (value.length <= maxLen) return value || "(空片段)";
+      return value.slice(0, maxLen) + "...";
     }
 
     topkEl.addEventListener("input", () => {

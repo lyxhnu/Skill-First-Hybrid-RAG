@@ -544,21 +544,30 @@ class EmbeddingGateway:
         self.settings = settings
         self._fallback = LocalHashEmbeddingProvider(settings)
         self._provider_instance: EmbeddingProvider | None = None
+        self._runtime_provider = "local-hash"
+        self._runtime_model = f"local-hash-{self._fallback.dim}"
+        self._runtime_is_fallback = True
 
     def embed_documents(self, texts: list[str]) -> np.ndarray:
         provider = self._provider()
         try:
-            return provider.embed_documents(texts)
+            vectors = provider.embed_documents(texts)
+            self._mark_runtime(provider)
+            return vectors
         except Exception:
             self._provider_instance = self._fallback
+            self._mark_fallback()
             return self._fallback.embed_documents(texts)
 
     def embed_query(self, text: str) -> np.ndarray:
         provider = self._provider()
         try:
-            return provider.embed_query(text)
+            vector = provider.embed_query(text)
+            self._mark_runtime(provider)
+            return vector
         except Exception:
             self._provider_instance = self._fallback
+            self._mark_fallback()
             return self._fallback.embed_query(text)
 
     def _provider(self) -> EmbeddingProvider:
@@ -591,10 +600,33 @@ class EmbeddingGateway:
                 self._provider_instance = GeminiEmbeddingProvider(self.settings)
                 return self._provider_instance
             self._provider_instance = self._fallback
+            self._mark_fallback()
             return self._provider_instance
         except Exception:
             self._provider_instance = self._fallback
+            self._mark_fallback()
             return self._provider_instance
+
+    def runtime_metadata(self) -> dict[str, Any]:
+        return {
+            "provider": self._runtime_provider,
+            "model": self._runtime_model,
+            "is_fallback": self._runtime_is_fallback,
+        }
+
+    def _mark_runtime(self, provider: EmbeddingProvider) -> None:
+        if provider is self._fallback:
+            self._mark_fallback()
+            return
+        label = self.settings.embed_provider.lower().strip()
+        self._runtime_provider = label or "unknown"
+        self._runtime_model = _active_embedding_model_name(self.settings)
+        self._runtime_is_fallback = False
+
+    def _mark_fallback(self) -> None:
+        self._runtime_provider = "local-hash"
+        self._runtime_model = f"local-hash-{self._fallback.dim}"
+        self._runtime_is_fallback = True
 
 
 class RerankGateway:

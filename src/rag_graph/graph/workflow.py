@@ -11,7 +11,8 @@ from ..models.providers import ModelGateway, RerankGateway
 from ..query_runtime.analyzer import QueryConstraintAnalyzer
 from ..skill_runtime.manager import SkillManager
 from ..skill_runtime.router import SkillRouter
-from ..utils.text import extract_keywords
+from ..types import QueryConstraintPlan, query_plan_from_dict
+from ..utils.text import extract_keywords, lexical_score, normalize_text
 from ..vector_store.index import VectorStore
 from .state import RAGState
 
@@ -154,6 +155,27 @@ def build_workflow(
                 "answer": "未在知识库中检索到相关内容，无法回答该问题。请补充更具体的关键词、文件名或时间范围。",
                 "citations": [],
                 "answerable": False,
+                "answer_support": {
+                    "explicit": False,
+                    "reason": "no_evidence",
+                    "max_support_score": 0.0,
+                    "threshold": _explicit_support_threshold(None),
+                },
+            }
+        direct_answer = _exact_qa_record_answer(state["query"], evidence)
+        if direct_answer is not None:
+            return direct_answer
+        support = _explicit_answer_support(
+            query=state["query"],
+            evidence=evidence,
+            query_plan=state.get("query_constraints"),
+        )
+        if not bool(support.get("explicit", False)):
+            return {
+                "answer": "检索到的内容不足以明确支持该问题，无法可靠回答。请补充更具体的实体、文件名、时间范围或业务条件。",
+                "citations": [],
+                "answerable": False,
+                "answer_support": support,
             }
         answer = model_gateway.generate(
             state["query"],
@@ -171,7 +193,7 @@ def build_workflow(
                     "retrieval_source": item["retrieval_source"],
                 }
             )
-        return {"answer": answer, "citations": citations, "answerable": True}
+        return {"answer": answer, "citations": citations, "answerable": True, "answer_support": support}
 
     def verify_citations(state: RAGState) -> dict[str, Any]:
         if state.get("answerable") is False:
@@ -255,6 +277,79 @@ def build_workflow(
     return graph.compile()
 
 
+
+def _exact_qa_record_answer(query: str, evidence: list[dict[str, Any]]) -> dict[str, Any] | None:
+    normalized_query = _normalize_qa_text(query)
+    if not normalized_query:
+        return None
+
+    best_item: dict[str, Any] | None = None
+    best_answer = ""
+    best_score = 0.0
+
+    for item in evidence:
+        if str(item.get("file_type", "")).lower() != "json":
+            continue
+        metadata = item.get("metadata", {})
+        if str(metadata.get("record_schema", "")).lower() != "qa_record":
+            continue
+        question = str(metadata.get("question", "")).strip()
+        answer = str(metadata.get("answer", "")).strip()
+        if not question or not answer:
+            continue
+
+        if _normalize_qa_text(question) == normalized_query:
+            best_item = item
+            best_answer = answer
+            best_score = float("inf")
+            break
+
+        match_score = lexical_score(query, question)
+        if match_score < 20.0 or match_score <= best_score:
+            continue
+        best_item = item
+        best_answer = answer
+        best_score = match_score
+
+    if best_item is None:
+        return None
+
+    return {
+        "answer": best_answer,
+        "citations": [
+            {
+                "evidence_id": best_item["evidence_id"],
+                "source_path": best_item["source_path"],
+                "location": best_item["location"],
+                "retrieval_source": best_item["retrieval_source"],
+            }
+        ],
+        "answerable": True,
+        "answer_support": {
+            "explicit": True,
+            "reason": "faq_exact_match",
+            "max_support_score": 999.0,
+            "threshold": _explicit_support_threshold(None),
+            "matched_evidence_ids": [best_item["evidence_id"]],
+        },
+    }
+
+
+def _normalize_qa_text(value: str) -> str:
+    normalized = normalize_text(value)
+    for source, target in (
+        ("帐户", "账户"),
+        ("訂單", "订单"),
+        ("訂购", "订购"),
+        ("訂單號", "订单号"),
+    ):
+        normalized = normalized.replace(source, target)
+    normalized = "".join(
+        char for char in normalized if char.isalnum() or "一" <= char <= "鿿"
+    )
+    return normalized
+
+
 def _generation_evidence(
     reranked: list[dict[str, Any]],
     merged: list[dict[str, Any]],
@@ -271,3 +366,59 @@ def _generation_evidence(
         if len(selected) >= limit:
             break
     return selected
+
+
+def _explicit_answer_support(
+    *,
+    query: str,
+    evidence: list[dict[str, Any]],
+    query_plan: QueryConstraintPlan | dict[str, Any] | None,
+) -> dict[str, Any]:
+    plan = _coerce_query_plan(query, query_plan)
+    threshold = _explicit_support_threshold(plan)
+    best_score = 0.0
+    best_id = ""
+    matched_ids: list[str] = []
+
+    for item in evidence:
+        score = lexical_score(
+            query,
+            f"{item.get('source_path', '')}\n{item.get('content', '')}",
+            query_plan=plan,
+        )
+        if score > best_score:
+            best_score = float(score)
+            best_id = str(item.get("evidence_id", ""))
+        if score >= threshold:
+            evidence_id = str(item.get("evidence_id", ""))
+            if evidence_id:
+                matched_ids.append(evidence_id)
+
+    return {
+        "explicit": best_score >= threshold,
+        "reason": "lexical_grounding",
+        "max_support_score": float(best_score),
+        "threshold": float(threshold),
+        "matched_evidence_ids": matched_ids[:5] if matched_ids else ([best_id] if best_id and best_score > 0 else []),
+    }
+
+
+def _explicit_support_threshold(plan: QueryConstraintPlan | None) -> float:
+    if plan is None:
+        return 6.0
+    if plan.hard_terms:
+        return 7.5
+    if plan.answer_shape in {"count", "comparison", "table", "list"}:
+        return 6.5
+    return 6.0
+
+
+def _coerce_query_plan(
+    query: str,
+    query_plan: QueryConstraintPlan | dict[str, Any] | None,
+) -> QueryConstraintPlan | None:
+    if query_plan is None:
+        return None
+    if isinstance(query_plan, QueryConstraintPlan):
+        return query_plan
+    return query_plan_from_dict({"raw_query": query, **query_plan})

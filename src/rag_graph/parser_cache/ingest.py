@@ -13,7 +13,7 @@ from ..config import Settings
 from ..utils.io import iter_jsonl, read_json, read_text_with_fallback, write_json, write_jsonl
 from ..utils.text import chunk_text
 
-SUPPORTED_FILE_TYPES = {".md", ".txt", ".pdf", ".xlsx"}
+SUPPORTED_FILE_TYPES = {".md", ".txt", ".pdf", ".xlsx", ".json"}
 
 
 class IngestEngine:
@@ -91,6 +91,8 @@ class IngestEngine:
             return self._parse_pdf_file(path)
         if suffix == ".xlsx":
             return self._parse_excel_file(path)
+        if suffix == ".json":
+            return self._parse_json_file(path)
         return []
 
     def _parse_text_file(self, path: Path, file_type: str) -> list[dict[str, Any]]:
@@ -173,6 +175,38 @@ class IngestEngine:
                 )
         return results
 
+    def _parse_json_file(self, path: Path) -> list[dict[str, Any]]:
+        text = read_text_with_fallback(path)
+        try:
+            payload = json.loads(text)
+        except Exception:
+            # Fallback to text ingestion for non-standard or partially broken JSON.
+            return self._parse_text_file(path, file_type="json")
+
+        records = self._coerce_json_records(payload)
+        results: list[dict[str, Any]] = []
+        for record_index, record in enumerate(records, start=1):
+            content, metadata = self._build_json_record_payload(record, record_index)
+            if not content.strip():
+                continue
+            location = {"record_index": record_index}
+            question = str(metadata.get("question", "")).strip()
+            label = str(metadata.get("label", "")).strip()
+            if question:
+                location["question"] = question[:120]
+            elif label:
+                location["label"] = label[:80]
+            results.append(
+                self._build_chunk(
+                    path,
+                    file_type="json",
+                    content=content,
+                    location=location,
+                    metadata=metadata,
+                )
+            )
+        return results
+
     def _build_chunk(
         self,
         path: Path,
@@ -200,6 +234,66 @@ class IngestEngine:
             "domain": domain,
             "metadata": metadata or {},
         }
+
+    @staticmethod
+    def _coerce_json_records(payload: Any) -> list[Any]:
+        if isinstance(payload, list):
+            return payload
+        if isinstance(payload, dict):
+            for key in ("records", "items", "data"):
+                value = payload.get(key)
+                if isinstance(value, list):
+                    return value
+            return [payload]
+        return [payload]
+
+    def _build_json_record_payload(self, record: Any, record_index: int) -> tuple[str, dict[str, Any]]:
+        if isinstance(record, dict):
+            question = str(record.get("question", "")).strip()
+            answer = str(record.get("answer", "")).strip()
+            label = str(record.get("label", "")).strip()
+            url = str(record.get("url", "")).strip()
+            record_id = str(record.get("id", "")).strip()
+
+            metadata = {
+                "record_index": record_index,
+                "record_schema": "qa_record",
+            }
+            if record_id:
+                metadata["record_id"] = record_id
+            if label:
+                metadata["label"] = label
+            if question:
+                metadata["question"] = question
+            if answer:
+                metadata["answer"] = answer
+            if url:
+                metadata["url"] = url
+
+            parts: list[str] = []
+            if label:
+                parts.append(f"label: {label}")
+            if question:
+                parts.append(f"question: {question}")
+            if answer:
+                parts.append(f"answer: {answer}")
+            if url:
+                parts.append(f"url: {url}")
+
+            if parts:
+                return "\n".join(parts), metadata
+
+            flattened = json.dumps(record, ensure_ascii=False, sort_keys=True)
+            metadata["record_schema"] = "json_record"
+            metadata["raw_record"] = flattened
+            return flattened, metadata
+
+        if isinstance(record, (str, int, float, bool)) or record is None:
+            value = str(record)
+            return value, {"record_index": record_index, "record_schema": "scalar_record"}
+
+        flattened = json.dumps(record, ensure_ascii=False, sort_keys=True)
+        return flattened, {"record_index": record_index, "record_schema": "json_record", "raw_record": flattened}
 
     def _load_pdf_reference_metadata(self) -> dict[str, Any]:
         return self._load_reference_metadata(required=[self.pdf_ref], cache_key="pdf")

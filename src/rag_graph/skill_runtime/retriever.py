@@ -57,8 +57,7 @@ class SkillRetriever:
             source_path = chunk["source_path"]
             if allowed and source_path not in allowed:
                 continue
-            target_payload = f"{Path(source_path).name}\n{chunk['content']}"
-            score = lexical_score(query, target_payload, query_plan=plan)
+            score, matched_fields = self._score_chunk(query, chunk, source_path, plan)
             if score <= 0:
                 continue
             payload = dict(chunk)
@@ -69,6 +68,8 @@ class SkillRetriever:
                 source_path=source_path,
                 reference_metadata=reference_metadata,
             )
+            if matched_fields:
+                payload["metadata"]["match_fields"] = matched_fields
             scored.append(payload)
 
         scored.sort(key=lambda item: item["score"], reverse=True)
@@ -83,6 +84,61 @@ class SkillRetriever:
         )
         ranked.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
         return ranked[:top_k]
+
+    def _score_chunk(
+        self,
+        query: str,
+        chunk: dict[str, Any],
+        source_path: str,
+        plan: QueryConstraintPlan | None,
+    ) -> tuple[float, list[str]]:
+        target_payload = f"{Path(source_path).name}\n{chunk['content']}"
+        base_score = lexical_score(query, target_payload, query_plan=plan)
+        if str(chunk.get("file_type", "")).lower() != "json":
+            return base_score, []
+        return self._score_json_chunk(query, chunk, source_path, plan, base_score)
+
+    @staticmethod
+    def _score_json_chunk(
+        query: str,
+        chunk: dict[str, Any],
+        source_path: str,
+        plan: QueryConstraintPlan | None,
+        base_score: float,
+    ) -> tuple[float, list[str]]:
+        metadata = dict(chunk.get("metadata", {}) or {})
+        file_name = Path(source_path).name
+        field_weights = (
+            ("label", 1.1),
+            ("question", 1.8),
+            ("answer", 0.7),
+            ("url", 0.15),
+        )
+
+        weighted_score = 0.0
+        matched_fields: list[str] = []
+        question_score = 0.0
+        answer_score = 0.0
+        for field_name, weight in field_weights:
+            value = str(metadata.get(field_name, "")).strip()
+            if not value:
+                continue
+            field_score = lexical_score(query, f"{file_name}\n{value}", query_plan=plan)
+            if field_score <= 0:
+                continue
+            weighted_score += field_score * weight
+            matched_fields.append(field_name)
+            if field_name == "question":
+                question_score = field_score
+            elif field_name == "answer":
+                answer_score = field_score
+
+        if question_score > 0 and answer_score > 0:
+            weighted_score += 0.45
+        elif question_score > 0:
+            weighted_score += 0.2
+
+        return max(base_score, weighted_score), matched_fields
 
     def _load_required_reference_metadata(self, candidate_files: set[str]) -> dict[str, dict[str, Any]]:
         metadata: dict[str, dict[str, Any]] = {}

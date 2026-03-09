@@ -6,6 +6,7 @@ from typing import Any
 
 from .config import Settings
 from .eval.evaluator import evaluate_service
+from .feedback.manager import CustomerServiceFeedbackManager
 from .fusion.fuse import EvidenceFusion
 from .graph.workflow import build_workflow
 from .memory.manager import MemoryManager
@@ -46,6 +47,7 @@ class RAGService:
         self.fusion = EvidenceFusion(self.settings)
         self.model_gateway = ModelGateway(self.settings)
         self.rerank_gateway = RerankGateway(self.settings)
+        self.feedback_manager = CustomerServiceFeedbackManager(self.settings)
         self.workflow = build_workflow(
             settings=self.settings,
             router=self.router,
@@ -91,6 +93,33 @@ class RAGService:
             "actor_id": actor_id or "default-user",
         }
         state_output = self.workflow.invoke(state_input)
+        evidence_trace = {
+            "structured_hits": sum(
+                1
+                for item in state_output.get("skill_evidence", [])
+                if str(item.get("retrieval_source", "")).startswith("skill:rag-skill:excel-analysis")
+            ),
+            "skill_hits": len(state_output.get("skill_evidence", [])),
+            "vector_hits": len(state_output.get("vector_evidence", [])),
+            "merged_hits": len(state_output.get("merged_evidence", [])),
+            "reranked_hits": len(state_output.get("reranked_evidence", [])),
+        }
+        answer_support = dict(state_output.get("answer_support", {}))
+        knowledge_found = bool(answer_support.get("explicit", False))
+        feedback_capture = self.feedback_manager.capture_gap(
+            query=query,
+            effective_query=str(state_output.get("effective_query", query)),
+            knowledge_found=knowledge_found,
+            session_id=str(state_output.get("session_id", session_id or "default-session")),
+            actor_id=str(state_output.get("actor_id", actor_id or "default-user")),
+            mode=mode,
+            confidence=float(state_output.get("confidence", 0.0) or 0.0),
+            selected_skills=list(state_output.get("selected_skills", [])),
+            candidate_dirs=list(state_output.get("candidate_dirs", [])),
+            candidate_files=list(state_output.get("candidate_files", [])),
+            evidence_trace=evidence_trace,
+        )
+        evidence_preview = _build_evidence_preview(state_output)
         return {
             "query": query,
             "mode": mode,
@@ -106,18 +135,11 @@ class RAGService:
             "candidate_dirs": state_output.get("candidate_dirs", []),
             "candidate_files": state_output.get("candidate_files", []),
             "confidence": state_output.get("confidence", 0.0),
-            "evidence_trace": {
-                "structured_hits": sum(
-                    1
-                    for item in state_output.get("skill_evidence", [])
-                    if str(item.get("retrieval_source", "")).startswith("skill:rag-skill:excel-analysis")
-                ),
-                "skill_hits": len(state_output.get("skill_evidence", [])),
-                "vector_hits": len(state_output.get("vector_evidence", [])),
-                "merged_hits": len(state_output.get("merged_evidence", [])),
-                "reranked_hits": len(state_output.get("reranked_evidence", [])),
-            },
+            "evidence_trace": evidence_trace,
+            "answer_support": answer_support,
+            "evidence_preview": evidence_preview,
             "selected_models": state_output.get("selected_models", {}),
+            "customer_service_feedback": feedback_capture or {"captured": False},
         }
 
     def evaluate(self, mode: str = "hybrid") -> dict[str, Any]:
@@ -172,7 +194,8 @@ class RAGService:
             "status": "ok",
             "knowledge_dir_exists": self.settings.knowledge_dir.exists(),
             "chunks_loaded": len(self.chunk_repo.chunks),
-            "vector_index_ready": self.vector_store.matrix is not None,
+            "vector_backend": self.vector_store.backend,
+            "vector_index_ready": self.vector_store.ready,
             "vector_index_metadata": dict(self.vector_store.metadata),
             "chat_provider": self.settings.chat_provider,
             "chat_model": self.settings.chat_model,
@@ -180,12 +203,64 @@ class RAGService:
             "embed_model": self.settings.embed_model,
             "rerank_provider": self.settings.rerank_provider,
             "rerank_model": self.settings.rerank_model,
-            "vector_dimension": int(self.vector_store.matrix.shape[1]) if self.vector_store.matrix is not None else 0,
+            "vector_dimension": self.vector_store.dimension,
             "registered_skills": len(self.skill_registry.list_skills()),
+            "customer_service_feedback": self.feedback_manager.stats(),
             "pid": self.pid,
             "startup_time": self.started_at,
             "project_root": str(self.settings.project_root),
             "service_file": __file__,
-            "vector_index_path": str(self.settings.vector_index_path),
+            "vector_index_path": str(self.vector_store.index_path),
             "memory_dir": str(self.settings.memory_dir),
         }
+
+    def list_customer_service_gaps(self, *, status: str = "open", limit: int = 100) -> dict[str, Any]:
+        return self.feedback_manager.list_gaps(status=status, limit=limit)
+
+    def resolve_customer_service_gap(
+        self,
+        *,
+        gap_id: str,
+        answer: str,
+        reviewer: str | None = None,
+        label: str | None = None,
+        question: str | None = None,
+        url: str | None = None,
+        auto_ingest: bool = True,
+    ) -> dict[str, Any]:
+        payload = self.feedback_manager.resolve_gap(
+            gap_id=gap_id,
+            answer=answer,
+            reviewer=reviewer,
+            label=label,
+            question=question,
+            url=url,
+        )
+        if auto_ingest:
+            payload["ingest"] = self.ingest(force=False)
+        return payload
+
+
+def _build_evidence_preview(state_output: dict[str, Any]) -> list[dict[str, Any]]:
+    preview: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in list(state_output.get("reranked_evidence", [])) + list(state_output.get("merged_evidence", [])):
+        evidence_id = str(item.get("evidence_id", ""))
+        if not evidence_id or evidence_id in seen:
+            continue
+        seen.add(evidence_id)
+        preview.append(
+            {
+                "evidence_id": evidence_id,
+                "source_path": str(item.get("source_path", "")),
+                "location": dict(item.get("location", {})),
+                "retrieval_source": str(item.get("retrieval_source", "")),
+                "score": float(item.get("score", 0.0) or 0.0),
+                "file_type": str(item.get("file_type", "")),
+                "domain": str(item.get("domain", "")),
+                "snippet": str(item.get("content", "")).replace("\n", " ")[:220],
+            }
+        )
+        if len(preview) >= 5:
+            break
+    return preview

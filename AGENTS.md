@@ -1,22 +1,25 @@
-﻿# AGENTS.md
+# AGENTS.md
 
 > 面向 AI Agent 的当前实现规范。本文档描述的是仓库里已经落地的 RAG 系统能力、硬约束和后续开发规则，不是纯设计草案。
 
 ## 1. 当前项目状态
 
-当前仓库已经实现了一套可运行的 `Skill-first + Vector-augmented + LangGraph` RAG 系统，核心特征如下：
+当前仓库已经实现了一套可运行的 `Skill-first + FAISS Hybrid Retrieval + LangGraph` RAG 系统，核心特征如下：
 
 1. `LangGraph` 负责编排完整问答流程。
 2. `.agent/skills/` 下的 skills 已接入注册、选择和执行，不再只是静态文档。
 3. `rag-skill` 是主检索技能，负责知识库目录路由、文件类型约束和检索执行。
 4. `vector` 是补召回层，不是默认主路径。
-5. 已实现 `跨会话长期记忆 + SummaryBlocks + SlidingWindow` 的分层记忆架构。
-6. 记忆层通过 `memory://sessions/{session_id}/turns/{turn_id}` 路径索引做无损压缩与按需回溯。
-7. 模型层已支持多厂商切换，当前默认组合为：
+5. 默认向量后端已经切到 `FAISS`，采用 `dense embedding + BM25 sparse` 的本地混合检索。
+6. 已实现 `跨会话长期记忆 + SummaryBlocks + SlidingWindow` 的分层记忆架构。
+7. 记忆层通过 `memory://sessions/{session_id}/turns/{turn_id}` 路径索引做无损压缩与按需回溯。
+8. 模型层已支持多厂商切换，当前默认组合为：
    - `chat`: `zhipu / glm-5`
    - `embedding`: `bailian / text-embedding-v4`
    - `rerank`: `bailian / qwen3-rerank`
-8. 系统已经暴露 API 和浏览器聊天页。
+   - `vector backend`: `faiss`
+9. 已实现电商客服问答闭环：未命中电商客服问题会自动进入待处理池，人工补答后回写 FAQ 并触发索引更新。
+10. 系统已经暴露 API 和浏览器聊天页。
 
 ## 2. 当前主链路
 
@@ -35,6 +38,7 @@
    - 读取 `SlidingWindow`
    - 读取 `SummaryBlocks`
    - 读取跨会话长期记忆
+   - 由模型判断是否需要把追问改写为更完整的 `effective_query`
    - 产出 `effective_query`、`memory_context`、`memory_trace`
 2. `analyze_query`
    - 产出 `query_constraints`
@@ -51,11 +55,16 @@
 7. `run_vector_retrieval`
    - 仅在 `hybrid/vector` 模式下运行
    - 默认受 `candidate_files` 限制，不允许无约束全库乱搜
-8. `generate_answer`
+   - 当 `vector_backend=faiss` 时，执行 `FAISS dense + BM25 sparse` 的本地混合检索
+8. `fuse_evidence`
+   - 以 `skill_weight / vector_weight` 融合 skill 与 vector 证据
+9. `rerank_evidence`
+   - 对融合后的证据再做重排
+10. `generate_answer`
    - 没有证据时直接拒答，不调用模型硬编答案
-9. `verify_citations`
+11. `verify_citations`
    - 引用必须来自当前 evidence pool
-10. `persist_memory`
+12. `persist_memory`
    - 追加当前 turn
    - 达到阈值时生成 `SummaryBlocks`
    - 仅把高重要度、持久化项目/用户上下文写入跨会话长期记忆
@@ -95,6 +104,7 @@
 1. 在已收敛候选文件内做 chunk 检索
 2. PDF 命中页的相邻页补充
 3. 对 PDF / Excel 证据附加 references 元数据
+4. 对 JSON 记录支持字段级加权命中
 
 相关实现：
 
@@ -114,8 +124,8 @@
 当前已支持的通用操作：
 
 1. `filter`
-2. `extreme`（如 max / min）
-3. `aggregate`（如 count / sum / avg / max / min）
+2. `extreme`（如 `max / min`）
+3. `aggregate`（如 `count / sum / avg / max / min`）
 4. `group_aggregate`
 
 相关实现：
@@ -124,14 +134,22 @@
 
 ### 3.5 Vector Store
 
-当前向量层使用 embedding 矩阵检索，不再是 TF-IDF。
+当前向量补召回层默认使用 `FAISS + BM25` 本地混合索引。
 
 特点：
 
-1. 向量索引保存在 `storage/vector/embedding_index.pkl`
-2. metadata 记录 provider / model / dimension
-3. 加载时如果 provider/model 不一致，会自动失效旧索引，避免错用
-4. 查询时支持 `allowed_files` 限制范围
+1. 当前仅支持 `faiss`，其余残留旧配置值应视为无效并归一化到 `faiss`
+2. 稠密检索使用 `FAISS IndexFlatIP`
+3. 稀疏检索使用本地 BM25 统计索引
+4. 查询时同时执行：
+   - dense embedding 召回
+   - BM25 稀疏召回
+5. 混合排序支持：
+   - `weighted`
+   - `rrf`
+6. 查询仍然支持 `allowed_files` 限制范围
+7. 索引保存在 `storage/vector/faiss_hybrid_index.pkl`
+8. 若本机未成功导入 `faiss`，系统会保留索引数据并回退到 `numpy` 稠密检索，但默认目标仍是使用 FAISS
 
 相关实现：
 
@@ -248,7 +266,7 @@
 1. `ingest` 时分块
 2. 行号 / 行区间可追踪
 3. skill 检索走 lexical match
-4. 可进入 embedding 索引
+4. 可进入 `FAISS + BM25` 混合索引
 
 ### 5.2 PDF
 
@@ -258,6 +276,7 @@
 2. 保留页码定位
 3. skill 检索命中后可补相邻页
 4. 查询前和解析前都必须读取 `pdf_reading.md`
+5. 可进入 `FAISS + BM25` 混合索引
 
 当前限制：
 
@@ -272,7 +291,8 @@
 1. `ingest` 时保留行级 chunk
 2. skill 查询时优先走结构化分析器
 3. 结构化分析由 references + 模型计划 + pandas 执行组成
-4. 可回答典型表分析问题，例如：
+4. 行级 chunk 也会进入 `FAISS + BM25` 混合索引
+5. 可回答典型表分析问题，例如：
    - 哪个员工工资最高
    - 销售部门有哪些职工
    - 哪些商品库存不足
@@ -282,6 +302,22 @@
 1. 还没有 SQL 执行层
 2. 目前是 `pandas plan execution`，不是 `xlsx -> sqlite`
 3. 跨多个工作簿 / 多表 join 的通用能力仍有限
+
+### 5.4 JSON
+
+当前能力：
+
+1. `ingest` 已支持 `.json` 文件扫描、解析与入索引
+2. 对 FAQ 风格的 JSON 记录按“单条记录 -> 单个 chunk”处理
+3. 默认保留 `label / question / answer / url` 等字段到 evidence metadata
+4. skill 检索已支持 JSON 字段级加权，优先提升 `question` 与 `label` 的命中
+5. 可进入 `FAISS + BM25` 混合索引，并继续受 `candidate_files` 约束
+
+当前限制：
+
+1. 当前默认按 FAQ 风格 JSON 设计，复杂嵌套 JSON 仅提供保守 fallback
+2. 还没有通用 JSON schema 自适应分析器
+3. 当前没有为 JSON 引入类似 PDF / Excel 的强制 references 机制
 
 ## 6. 当前检索与回答规则
 
@@ -301,6 +337,11 @@
 2. `mode=vector` 直接跑 vector
 3. `mode=hybrid` 下，若 skill 命中不足才跑 vector
 4. vector 默认受 `candidate_files` 约束
+5. 默认 vector 后端为 `FAISS + BM25` 本地混合检索
+6. 混合检索会同时结合：
+   - dense embedding 召回
+   - BM25 稀疏召回
+7. 混合检索返回结果之后，仍然进入本系统的 `fuse -> rerank -> generate` 链路
 
 ### 6.3 无证据拒答
 
@@ -334,6 +375,8 @@
 6. `POST /evaluate`
 7. `GET /skills`
 8. `POST /skills/execute`
+9. `GET /customer-service/gaps`
+10. `POST /customer-service/gaps/{gap_id}/resolve`
 
 相关实现：
 
@@ -351,6 +394,7 @@
 5. 创建新会话
 6. 浏览器本地保存 `actor_id` 和当前 `session_id`
 7. 查看健康状态和命中统计
+8. 展示当前 `vector_backend`
 
 ### 7.2 /query 会话字段
 
@@ -379,6 +423,9 @@
 7. `confidence`
 8. `evidence_trace`
 9. `selected_models`
+10. `customer_service_feedback`
+11. `answer_support`
+12. `evidence_preview`
 
 ### 8.2 /health 返回字段
 
@@ -388,16 +435,20 @@
 2. `startup_time`
 3. `project_root`
 4. `service_file`
-5. `vector_index_path`
-6. `vector_index_metadata`
-7. `memory_dir`
+5. `vector_backend`
+6. `vector_index_path`
+7. `vector_index_metadata`
+8. `memory_dir`
+9. `customer_service_feedback`
 
 这些字段是为了快速判断：
 
 1. 当前连到的是不是正确进程
 2. 当前进程是否加载了正确代码
-3. 当前索引是否与 embedding 配置匹配
-4. 当前记忆存储是否指向正确目录
+3. 当前向量后端是不是预期的 `faiss`
+4. 当前索引是否与 embedding 配置匹配
+5. 当前记忆存储是否指向正确目录
+6. 当前电商客服待处理池是否在持续积压
 
 ## 9. 当前运行要求
 
@@ -410,7 +461,15 @@
 1. 不同 conda 环境会导致服务行为与本地脚本行为不一致
 2. 未设置 `PYTHONPATH=src` 时，可能根本导不进当前工作区代码
 
-### 9.2 重启要求
+### 9.2 FAISS 依赖要求
+
+默认 `vector_backend=faiss`，因此运行前必须满足：
+
+1. 已安装 `faiss-cpu`
+2. `RAG_VECTOR_BACKEND` 保持为 `faiss`
+3. 已执行一次 `/ingest` 构建本地混合索引
+
+### 9.3 重启要求
 
 每次改动以下任一内容后，都必须重启服务：
 
@@ -419,13 +478,15 @@
 3. `config.py`
 4. `AGENTS.md` 变更后如果前端/接口依赖了新增约定，也必须同步重启验证
 
-### 9.3 重建索引要求
+### 9.4 重建索引要求
 
 出现以下情况时，必须重新执行 `/ingest`：
 
 1. `knowledge/` 文件变化
 2. embedding provider 或 embedding model 变化
-3. 需要把最新 PDF/Excel references metadata 写入 parsed chunks
+3. BM25 参数变化
+4. FAISS 混合排序参数变化
+5. 需要把最新 PDF/Excel references metadata 写入 parsed chunks
 
 ## 10. 当前开发边界
 
@@ -437,6 +498,7 @@
 4. 多表 join / 多工作簿联合分析
 5. 基于最终答案质量的统一 confidence
 6. 激进型的跨会话长期事实记忆
+7. 更强的中文 BM25 分词优化与可插拔 analyzer
 
 ### 10.1 当前记忆边界
 
@@ -446,6 +508,36 @@
 2. `LongTermMemory` 当前是保守写入
 3. 长期记忆更适合保存用户偏好、约束、目标、身份、持续项目上下文
 4. 普通知识库问答结果不应默认写入长期记忆
+
+## 10. 当前电商客服问答闭环
+
+### 10.1 触发条件
+
+仅当同时满足以下条件时，才会自动记录缺口问题：
+
+1. 当前问题已经完成一次完整检索
+2. 本轮最终没有检索到任何明确可用的知识证据
+
+### 10.2 存储位置
+
+1. 待处理池：`storage/feedback/customer_service_gaps.json`
+2. FAQ 问答库：`knowledge/E-commerce Data/faq.json`
+
+### 10.3 当前闭环行为
+
+1. `RAGService.query` 在工作流执行结束后判断是否需要记录客服知识缺口
+2. 当前判定基于 `answer_support.explicit`，不再要求必须路由到 `faq.json`
+3. 相同问题按归一化后的 `question_key` 去重，只累计 `hits`
+4. 人工补答后调用 `POST /customer-service/gaps/{gap_id}/resolve`
+5. 新答案会写回 `faq.json`
+6. 默认自动执行一次 `/ingest`
+7. 若同一问题已经被人工补答，但后续仍然没有明确证据支撑，则记为 `resolved_regression`
+
+### 10.4 当前边界
+
+1. 当前“是否属于电商客服问题”的判断基于现有路由结果，不额外引入新的 LLM 分类器
+2. 当前待处理池使用本地 JSON 文件，不包含跨进程文件锁
+3. 当前回写目标固定为 `knowledge/E-commerce Data/faq.json`
 
 ## 11. 后续变更硬约束
 
@@ -468,7 +560,17 @@
 2. 向量优先、skill 兜底
 3. 无引用生成
 
-### 11.3 PDF / Excel 变更规则
+### 11.3 不能破坏 FAISS 混合检索约束
+
+任何涉及向量层的改动，都必须满足：
+
+1. 默认后端仍为 `faiss`
+2. `mode=hybrid` 下的向量补召回仍受 `candidate_files` 约束
+3. 混合检索仍同时考虑稠密向量与 BM25 稀疏检索
+4. 向量后端 metadata 必须记录当前 provider / model / backend
+5. 不得把系统改回单纯 embedding 点积检索
+
+### 11.4 PDF / Excel 变更规则
 
 任何涉及 PDF / Excel 的代码变更，都必须满足：
 
@@ -477,7 +579,7 @@
 3. 保持可追溯引用
 4. 不允许为了性能删掉 references 读取步骤
 
-### 11.4 记忆层变更规则
+### 11.5 记忆层变更规则
 
 任何涉及分层记忆的改动，都必须满足：
 
@@ -489,7 +591,7 @@
 6. 不得把普通知识库答案无门槛刷入跨会话长期记忆
 7. 需要事实回溯时，必须优先回捞原始 turns，而不是只依赖摘要文本
 
-### 11.5 API 兼容性
+### 11.6 API 兼容性
 
 以下接口默认视为稳定接口，不应随意删除：
 
@@ -499,8 +601,10 @@
 4. `POST /evaluate`
 5. `GET /skills`
 6. `POST /skills/execute`
+7. `GET /customer-service/gaps`
+8. `POST /customer-service/gaps/{gap_id}/resolve`
 
-### 11.6 诊断字段不能随意删
+### 11.7 诊断字段不能随意删
 
 以下字段默认保留：
 
@@ -515,10 +619,22 @@
 9. `startup_time`
 10. `project_root`
 11. `service_file`
-12. `vector_index_metadata`
-13. `memory_dir`
+12. `vector_backend`
+13. `vector_index_metadata`
+14. `memory_dir`
+15. `customer_service_feedback`
 
-### 11.7 每次改动的最小回归集合
+### 11.8 不能破坏电商客服问答闭环
+
+任何涉及电商 FAQ、拒答逻辑或客服域路由的改动，都必须满足：
+
+1. 电商客服未命中问题仍能被记录到待处理池
+2. 人工补答后仍能回写 `knowledge/E-commerce Data/faq.json`
+3. 回写 FAQ 后仍默认触发索引更新
+4. `/query` 返回中的 `customer_service_feedback` 字段不得删除
+5. 不得把待处理池实现成只留日志、不支持回写的单向流程
+
+### 11.9 每次改动的最小回归集合
 
 后续每次改动，至少回归以下问题：
 
@@ -548,6 +664,7 @@
 3. 统一最终 confidence 计算
 4. 更强的 skill policy 抽取，而不是继续堆题型特判
 5. 长期记忆从当前保守写入升级到更可靠的 durable-project-memory 抽取
+6. BM25 分词与 analyzers 做成可插拔
 
 ## 13. 完成定义
 
@@ -555,9 +672,10 @@
 
 1. Skill-first 主链路可运行
 2. Hybrid 补召回可运行
-3. PDF / Excel references 约束已真正进入执行链路
-4. Excel 已具备通用结构化分析能力的基础版本
-5. 分层记忆已接入主链路，支持跨轮追问与压缩摘要回溯
-6. API、前端、索引、模型网关、诊断字段可协同工作
+3. 默认 `FAISS + BM25` 混合检索可运行
+4. PDF / Excel references 约束已真正进入执行链路
+5. Excel 已具备通用结构化分析能力的基础版本
+6. 分层记忆已接入主链路，支持跨轮追问与压缩摘要回溯
+7. API、前端、索引、模型网关、诊断字段可协同工作
 
-后续任何变更都应以不破坏上述六点为前提。
+后续任何变更都应以不破坏上述七点为前提。

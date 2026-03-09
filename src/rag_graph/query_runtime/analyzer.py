@@ -9,7 +9,7 @@ from ..config import Settings
 from ..types import QueryConstraintPlan
 from ..utils.text import extract_keywords, normalize_text
 
-_FILE_PATTERN = re.compile(r"[A-Za-z0-9_\-\u4e00-\u9fff]+\.(?:pdf|txt|md|xlsx)", re.IGNORECASE)
+_FILE_PATTERN = re.compile(r"[A-Za-z0-9_\-\u4e00-\u9fff]+\.(?:pdf|txt|md|xlsx|json)", re.IGNORECASE)
 _TIME_PATTERN = re.compile(
     "(?:20\\d{2}(?:[-/]\\d{1,2}(?:[-/]\\d{1,2})?|"
     "\\u5e74(?:q[1-4]|\\u7b2c?[\\u4e00\\u4e8c\\u4e09\\u56db1-4]\\u5b63\\u5ea6|"
@@ -476,6 +476,7 @@ Rules:
 - Do not generate broken substrings, character n-grams, or near-duplicate variants.
 - Do not copy hard_terms into soft_terms unless the hard term itself is also the literal target field.
 - When the user asks for ranked items, table rows, or report facts, include the likely section title or table title that may contain the answer.
+- When the source is likely a JSON/FAQ knowledge base, include likely service topics, policy names, or FAQ-style question phrases in soft_terms.
 - Prefer 1-4 high-value soft_terms that improve retrieval, not many variants of the same phrase.
 - intent should be a short snake_case label.
 - answer_shape should be one of: fact, list, table, count, comparison, summary, unknown.
@@ -492,6 +493,9 @@ Question: analyze inventory data and find low-stock products
 
 Question: \u5206\u6790\u5e93\u5b58\u6570\u636e\uff0c\u54ea\u4e9b\u5546\u54c1\u5e93\u5b58\u4e0d\u8db3
 {"hard_terms":[],"soft_terms":["\u5e93\u5b58\u4e0d\u8db3","\u8865\u8d27\u9608\u503c","\u5e93\u5b58\u8868"],"intent":"analysis","answer_shape":"list"}
+
+Question: \u8ba2\u5355\u53d6\u6d88\u653f\u7b56\u662f\u4ec0\u4e48
+{"hard_terms":[],"soft_terms":["\u53d6\u6d88\u653f\u7b56","\u8ba2\u5355\u53d6\u6d88","\u9000\u6b3e\u89c4\u5219","\u5e38\u89c1\u95ee\u9898"],"intent":"policy_lookup","answer_shape":"fact"}
 """.strip()
 
 _SOFT_TERM_EXPANSION_PROMPT = """
@@ -526,6 +530,11 @@ Question: \u5e93\u5b58\u4e0d\u8db3\u7684\u5546\u54c1
 hard_terms=[]
 current_soft_terms=["\u5e93\u5b58\u4e0d\u8db3"]
 {"soft_terms":["\u8865\u8d27\u9608\u503c","\u5e93\u5b58\u8868"]}
+
+Question: \u8ba2\u5355\u53d6\u6d88\u653f\u7b56\u662f\u4ec0\u4e48
+hard_terms=[]
+current_soft_terms=["\u53d6\u6d88\u653f\u7b56"]
+{"soft_terms":["\u8ba2\u5355\u53d6\u6d88","\u9000\u6b3e\u89c4\u5219","\u5e38\u89c1\u95ee\u9898"]}
 """.strip()
 
 _FILE_AWARE_SOFT_TERM_PROMPT = """
@@ -546,6 +555,12 @@ hard_terms=["\u4e09\u4e00\u91cd\u5de5"]
 current_soft_terms=["\u524d\u4e09\u5927\u80a1\u4e1c"]
 candidate_files=["\u4e09\u4e00\u91cd\u5de5 2025 Q3.pdf","\u4e09\u4e00\u91cd\u5de5_2025_Q3.txt"]
 {"soft_terms":["\u524d10\u540d\u80a1\u4e1c","\u80a1\u4e1c\u6301\u80a1\u60c5\u51b5"]}
+
+Question: \u5982\u4f55\u53d6\u6d88\u8ba2\u5355
+hard_terms=[]
+current_soft_terms=["\u53d6\u6d88\u8ba2\u5355"]
+candidate_files=["faq.json"]
+{"soft_terms":["\u53d6\u6d88\u653f\u7b56","\u9000\u6b3e\u89c4\u5219","\u5e38\u89c1\u95ee\u9898"]}
 """.strip()
 
 

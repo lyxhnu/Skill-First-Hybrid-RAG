@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     knowledge_dir: Path = Field(default=DEFAULT_PROJECT_ROOT / "knowledge")
     storage_dir: Path = Field(default=DEFAULT_PROJECT_ROOT / "storage")
     memory_dir: Path = Field(default=DEFAULT_PROJECT_ROOT / "storage" / "memory")
+    feedback_dir: Path = Field(default=DEFAULT_PROJECT_ROOT / "storage" / "feedback")
 
     chunk_size: int = 900
     chunk_overlap: int = 120
@@ -28,6 +29,7 @@ class Settings(BaseSettings):
     max_top_k: int = 25
     vector_weight: float = 0.85
     skill_weight: float = 1.0
+    vector_backend: str = "faiss"
     memory_window_turns: int = 4
     memory_summary_trigger_turns: int = 6
     memory_summary_block_turns: int = 6
@@ -42,6 +44,15 @@ class Settings(BaseSettings):
     rerank_provider: str = "bailian"
     rerank_model: str = "qwen3-rerank"
     local_embedding_dim: int = 1536
+    faiss_hybrid_ranker: str = "weighted"
+    faiss_dense_weight: float = 0.65
+    faiss_sparse_weight: float = 0.35
+    faiss_rrf_k: int = 60
+    faiss_branch_top_k_factor: int = 4
+    faiss_branch_top_k_min: int = 20
+    faiss_branch_top_k_max: int = 80
+    bm25_k1: float = 1.5
+    bm25_b: float = 0.75
 
     openai_api_key: str | None = None
     openai_base_url: str | None = None
@@ -83,11 +94,12 @@ class Settings(BaseSettings):
 
     @property
     def vector_index_path(self) -> Path:
-        return self.storage_dir / "vector" / "embedding_index.pkl"
+        return self.storage_dir / "vector" / "faiss_hybrid_index.pkl"
 
     def ensure_storage_dirs(self) -> None:
         (self.storage_dir / "parsed").mkdir(parents=True, exist_ok=True)
         (self.storage_dir / "metadata").mkdir(parents=True, exist_ok=True)
         (self.storage_dir / "vector").mkdir(parents=True, exist_ok=True)
+        self.feedback_dir.mkdir(parents=True, exist_ok=True)
         (self.memory_dir / "sessions").mkdir(parents=True, exist_ok=True)
         (self.memory_dir / "actors").mkdir(parents=True, exist_ok=True)

@@ -27,5 +27,14 @@ class SkillExecuteRequest(BaseModel):
     top_k: int = Field(default=8, ge=1, le=25)
 
 
+class CustomerServiceGapResolveRequest(BaseModel):
+    answer: str = Field(min_length=1)
+    reviewer: str | None = Field(default=None, min_length=1)
+    label: str | None = Field(default="ai_customer_service", min_length=1)
+    question: str | None = Field(default=None, min_length=1)
+    url: str | None = Field(default=None, min_length=1)
+    auto_ingest: bool = True
+
+
 class GenericResponse(BaseModel):
     payload: dict[str, Any]

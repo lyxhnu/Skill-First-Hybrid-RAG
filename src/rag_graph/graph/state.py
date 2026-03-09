@@ -30,4 +30,5 @@ class RAGState(TypedDict):
     answer: NotRequired[str]
     answerable: NotRequired[bool]
     citations: NotRequired[list[dict[str, Any]]]
+    answer_support: NotRequired[dict[str, Any]]
     errors: NotRequired[list[str]]

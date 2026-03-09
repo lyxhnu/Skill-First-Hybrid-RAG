@@ -2,11 +2,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from ..service import RAGService
-from .schemas import EvaluateRequest, GenericResponse, IngestRequest, QueryRequest, SkillExecuteRequest
+from .schemas import (
+    CustomerServiceGapResolveRequest,
+    EvaluateRequest,
+    GenericResponse,
+    IngestRequest,
+    QueryRequest,
+    SkillExecuteRequest,
+)
 
 
 app = FastAPI(title="Skill-First Hybrid RAG", version="0.1.0")
@@ -69,4 +76,36 @@ def execute_skill(request: SkillExecuteRequest) -> GenericResponse:
         payload = service.execute_skill(skill_id=request.skill_id, query=request.query, top_k=request.top_k)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return GenericResponse(payload=payload)
+
+
+@app.get("/customer-service/gaps", response_model=GenericResponse)
+def list_customer_service_gaps(
+    status: str = Query(default="open"),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> GenericResponse:
+    try:
+        payload = service.list_customer_service_gaps(status=status, limit=limit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return GenericResponse(payload=payload)
+
+
+@app.post("/customer-service/gaps/{gap_id}/resolve", response_model=GenericResponse)
+def resolve_customer_service_gap(
+    gap_id: str,
+    request: CustomerServiceGapResolveRequest,
+) -> GenericResponse:
+    try:
+        payload = service.resolve_customer_service_gap(
+            gap_id=gap_id,
+            answer=request.answer,
+            reviewer=request.reviewer,
+            label=request.label,
+            question=request.question,
+            url=request.url,
+            auto_ingest=request.auto_ingest,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return GenericResponse(payload=payload)

@@ -11,7 +11,7 @@ from ..types import QueryConstraintPlan, query_plan_from_dict
 from ..utils.io import read_text_with_fallback
 from ..utils.text import lexical_score
 
-SUPPORTED_FILE_TYPES = {".md", ".txt", ".pdf", ".xlsx"}
+SUPPORTED_FILE_TYPES = {".md", ".txt", ".pdf", ".xlsx", ".json"}
 
 
 class SkillRouter:
