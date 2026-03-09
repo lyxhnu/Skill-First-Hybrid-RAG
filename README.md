@@ -434,20 +434,7 @@ Invoke-RestMethod -Method Post `
 9. `GET /customer-service/gaps`
 10. `POST /customer-service/gaps/{gap_id}/resolve`
 
-## 运行与调试建议
 
-1. 修改 `src/rag_graph/**/*.py` 后重启服务
-2. 修改 `knowledge/` 文件后重新执行 `/ingest`
-3. 切换 embedding provider/model 后重新执行 `/ingest`
-4. 修改 BM25 参数或混合排序权重后重新执行 `/ingest`
-5. 异常定位优先看 `/health` 和 `/query` 的 `memory_trace/evidence_trace`
-
-## 当前边界
-
-1. 尚未实现通用 `xlsx -> sqlite -> SQL` 执行层
-2. 尚未实现通用 PDF 结构化规划执行器
-3. `confidence` 目前是检索链路分数，不等于答案正确率
-4. 当前 BM25 为本地实现，尚未做更复杂的中文分词优化
 
 ## 致谢
 
