@@ -388,5 +388,335 @@
         "question": "我必须在多长时间内使用我的奖励和积分余额？",
         "answer": "奖励有有效期。通过订单付款（不包括购买预付积分和奖励）获得的奖励的到期日期取决于奖励金额记入您的奖励和积分帐户的日期。如果奖励是通过订单付款获得的，请注意，奖励金额记入您的奖励和信用账户后 60 天即为到期日。但是，根据获得奖励时的特殊情况，该时间可能会更长或更短。您可以在“我的奖励和积分”页面查看到期日期。\n如果您在到期日之前未进行购买或使用您的奖励和积分余额，任何过期的奖励都将自动从您的奖励和积分余额中扣除。\n\n信用永远不会过期。",
         "label": "奖励与余额"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-status-update-time&prm=1.34.147.0",
+        "question": "下单后多久能看到订单的处理状态更新？",
+        "answer": "下单并完成付款后，我们会在1-2个工作日内更新订单的处理状态。您可在“我的订单”页面实时查看，若超过2个工作日未更新，可联系客服核实订单是否进入异常审核环节。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=modify-order-quantity&prm=1.34.148.0",
+        "question": "订单提交后发现商品数量选错了，还能修改吗？",
+        "answer": "若订单处于“待处理”状态，您可在“我的订单”中找到对应订单，点击“修改订单”按钮调整商品数量；若订单已进入“处理中”或“已发货”状态，无法直接修改，需联系客服协助取消订单后重新下单（定制类商品除外）。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=merge-order-freight-reduction&prm=1.34.149.0",
+        "question": "合并多个订单发货可以减免运费吗？",
+        "answer": "目前暂不支持合并多个独立订单发货，每个订单的运费均按照该订单的商品重量、体积及配送地址单独计算，暂无合并发货减免运费的政策。您可在下单前将多件商品加入同一购物车结算，以享受更优的运费计价方式。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=partial-out-of-stock&prm=1.34.150.0",
+        "question": "订单中的部分商品缺货，会如何处理？",
+        "answer": "若订单内部分商品缺货，我们的客服会在1个工作日内通过邮件或站内信通知您，您可选择等待补货发货、更换同价位替代商品，或申请缺货商品的退款，剩余有货商品将正常发货。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=holiday-order-delay&prm=1.34.151.0",
+        "question": "节假日期间下单，订单处理会延迟吗？",
+        "answer": "法定节假日（如圣诞节、春节等）期间，订单处理效率会略有降低，处理时间可能延长至3-4个工作日，发货时间也会相应顺延。具体节假日的订单处理安排，我们会提前在官网公告栏公示。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=set-delivery-reminder&prm=1.34.152.0",
+        "question": "如何设置订单的发货提醒？",
+        "answer": "您可在“账户设置-消息通知”中开启“订单发货提醒”功能，开启后，当订单完成发货并生成物流单号时，我们会通过短信和邮件的方式向您推送提醒，方便您及时跟踪物流。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=cancel-order-notice&prm=1.34.153.0",
+        "question": "取消订单后，多久能收到取消成功的通知？",
+        "answer": "提交取消订单申请后，我们会在1个工作日内审核，审核通过后会立即通过邮件和站内信发送取消成功通知。若为已付款订单，取消成功后退款会同步启动处理流程。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=pre-sale-normal-settle&prm=1.34.154.0",
+        "question": "预售商品的订单和普通商品订单可以一起结算吗？",
+        "answer": "预售商品和普通商品可加入同一购物车结算，但发货时间会分开：普通商品按正常时效发货，预售商品将在商品详情页标注的预售结束时间后发货，您的订单会拆分为多个包裹分别配送。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=cart-clear-after-order&prm=1.34.155.0",
+        "question": "订单完成后，购物车中的未结算商品会自动清空吗？",
+        "answer": "购物车中的未结算商品不会因其他订单完成而自动清空，除非商品下架、库存售罄，或您手动删除，否则商品会在购物车中保留30天，超过30天未操作将自动清理。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=logistics-track-archive&prm=1.34.156.0",
+        "question": "如何查看历史订单的物流轨迹存档？",
+        "answer": "您可在“我的订单”中筛选“已完成”订单，找到对应订单后点击“物流详情”，系统会保留该订单物流轨迹信息180天；若需查询180天前的物流记录，可联系客服申请调取存档。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=phone-bind-multi-account&prm=1.34.157.0",
+        "question": "一个手机号码可以绑定多个兰亭集势账户吗？",
+        "answer": "一个手机号码仅能绑定一个兰亭集势账户，这是为了保障账户安全，避免身份验证混乱。若您需更换绑定的账户，需先解除原账户的手机号绑定，再绑定至新账户。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=account-freeze-inactive&prm=1.34.158.0",
+        "question": "账户长时间未登录会被冻结吗？",
+        "answer": "若账户连续12个月未登录且无任何订单记录，系统会将账户标记为“休眠状态”，但不会冻结。您再次登录时，验证手机号或邮箱即可恢复正常使用；若有未完成的订单或未使用的优惠券，账户不会进入休眠状态。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=modify-password-protection&prm=1.34.159.0",
+        "question": "如何修改账户的登录密码保护问题？",
+        "answer": "登录“我的账户”后，进入“账户安全”页面，找到“密码保护问题”选项，点击“修改”，先验证当前登录密码，再输入新的保护问题及答案即可完成修改，建议设置易记忆且不易泄露的问题和答案。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=phone-canceled-verification&prm=1.34.160.0",
+        "question": "账户绑定的手机号已注销，无法接收验证码怎么办？",
+        "answer": "您可在登录页面点击“无法接收验证码”，选择“人工验证”方式，上传身份证正反面照片及账户注册信息，客服审核通过后（1-2个工作日），会协助您更换绑定的手机号。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=check-login-record&prm=1.34.161.0",
+        "question": "如何查看账户的登录记录？",
+        "answer": "在“账户安全”页面，可查看近6个月的账户登录记录，包括登录时间、登录设备、登录IP地址；若发现异常登录记录，可立即点击“锁定账户”，并联系客服核实情况，同时修改登录密码。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=merge-account-points&prm=1.34.162.0",
+        "question": "可以将多个账户的积分合并到一个账户吗？",
+        "answer": "暂不支持合并多个账户的积分，积分仅能在获取积分的账户内使用。若您有多个账户，建议集中使用一个账户下单，以累计更多积分享受兑换权益。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=modify-nickname-impact&prm=1.34.163.0",
+        "question": "账户昵称可以修改吗？修改后会影响订单信息吗？",
+        "answer": "账户昵称可在“账户设置-个人信息”中修改，每月可修改1次。昵称修改仅展示在个人账户页面，不会影响已下单的订单信息（订单信息以实名/收货信息为准）。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=find-bound-phone&prm=1.34.164.0",
+        "question": "忘记账户绑定的手机号，如何找回？",
+        "answer": "您可联系客服，提供账户注册时的邮箱、常用收货地址、历史订单号等信息，客服核实身份后，会将绑定的手机号后四位告知您；若需更换手机号，可同步申请人工验证更换。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-remark-set&prm=1.34.165.0",
+        "question": "下单时可以给订单添加备注吗？备注会被仓库看到吗？",
+        "answer": "下单结算页面有“订单备注”输入框，您可填写配送要求、商品特殊说明等内容（限200字内），备注信息会同步至仓库配货系统，仓库工作人员会尽量按备注要求处理。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=delete-history-order&prm=1.34.166.0",
+        "question": "可以删除“我的订单”中的历史订单记录吗？",
+        "answer": "暂不支持手动删除订单记录，“我的订单”中会永久保留您的所有订单信息（包括已取消、已完成订单），目的是方便您后续查询物流、售后、发票等相关信息。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-currency-change&prm=1.34.167.0",
+        "question": "订单提交后，还能修改结算的货币类型吗？",
+        "answer": "订单提交并生成订单号后，结算货币类型无法修改。您可在下单前在网站右上角切换货币类型（如美元、欧元、人民币等），结算时会按当前汇率自动换算。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=urgent-delivery-apply&prm=1.34.168.0",
+        "question": "订单可以申请加急发货吗？",
+        "answer": "普通商品订单可在“我的订单”中点击“申请加急发货”，若仓库库存充足，会优先处理您的订单，加急发货需额外支付少量加急费用；预售、定制类商品不支持加急发货。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-invoice-type&prm=1.34.169.0",
+        "question": "订单发票可以选择电子发票或纸质发票吗？",
+        "answer": "目前仅支持开具电子发票，暂不提供纸质发票服务。电子发票效力与纸质发票一致，可下载打印用于报销，您可在订单完成后30天内申请开具。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-address-verify&prm=1.34.170.0",
+        "question": "订单收货地址会被系统验证吗？验证不通过怎么办？",
+        "answer": "系统会自动验证收货地址的格式、邮编、国家/地区是否匹配，若验证不通过，订单会进入“待审核”状态，客服会通过邮件联系您确认正确地址，核实后订单才会继续处理。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-weight-check&prm=1.34.171.0",
+        "question": "如何查看订单中商品的实际重量？",
+        "answer": "在“我的订单”中找到对应订单，点击“订单详情”，页面下方会显示“商品总重量”（含包装），该重量为仓库称重后的实际数据，也是计算运费的依据。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-coupon-reuse&prm=1.34.172.0",
+        "question": "取消订单后，已使用的优惠券会返还吗？",
+        "answer": "若优惠券未过期，取消订单后会在1个工作日内自动返还至您的账户，可再次使用；若优惠券已过期，即使取消订单也无法返还。返还的优惠券使用规则与原优惠券一致。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-tax-calculation&prm=1.34.173.0",
+        "question": "订单中的税费是如何计算的？可以减免吗？",
+        "answer": "税费根据您的收货地址所在国家/地区的海关政策、商品品类、订单金额计算，结算页面会自动显示税费金额。除部分免税商品外，普通商品税费无法减免，需随订单一并支付。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-delivery-time&prm=1.34.174.0",
+        "question": "订单显示“已发货”，多久能收到包裹？",
+        "answer": "发货后配送时间取决于您选择的物流方式：标准物流7-15个工作日，加急物流3-7个工作日，偏远地区会额外增加2-3个工作日。您可通过物流轨迹实时查看配送进度。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-repeat-submit&prm=1.34.175.0",
+        "question": "不小心重复提交了相同的订单，该怎么处理？",
+        "answer": "若重复订单均未付款，可等待系统自动取消（超时未付款），或手动取消其中一个；若已付款，可联系客服说明情况，客服会核实后为您办理多余订单的退款，退款时效与正常取消订单一致。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-customized-modify&prm=1.34.176.0",
+        "question": "定制类商品的订单提交后，还能修改定制信息吗？",
+        "answer": "定制类商品订单提交后，若未进入生产环节（下单12小时内），可联系客服修改定制信息；若已进入生产环节，无法修改，需取消订单后重新下单（定制类商品取消可能产生工本费）。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-insurance-refund&prm=1.34.177.0",
+        "question": "购买了订单运费险，取消订单后运费险会退款吗？",
+        "answer": "若订单未发货，取消订单后运费险保费会随订单退款一并返还；若订单已发货，运费险生效，保费不予退还。运费险理赔需在退货完成后提交申请，审核通过后赔付。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-payment-method-change&prm=1.34.178.0",
+        "question": "订单未付款，能更换付款方式吗？",
+        "answer": "订单未付款时，可直接在“我的订单”中点击“重新付款”，选择新的付款方式完成支付，无需取消订单。支持更换的付款方式包括信用卡、PayPal、钱包余额等。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-delivery-country-change&prm=1.34.179.0",
+        "question": "订单提交后，能修改收货国家/地区吗？",
+        "answer": "仅订单处于“待处理”且未付款状态时，可修改收货国家/地区，修改后运费、税费会重新计算；若已付款或已发货，无法修改，需取消订单后重新下单。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-item-separate-delivery&prm=1.34.180.0",
+        "question": "一个订单中的多件商品会分开发货吗？",
+        "answer": "若订单中部分商品库存分布在不同仓库，会分开发货，每个包裹会生成独立的物流单号，您可在“我的订单”中查看每个包裹的发货状态和物流信息，所有包裹均免额外运费。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-after-sale-time&prm=1.34.181.0",
+        "question": "订单完成后，售后申请的有效期是多久？",
+        "answer": "普通商品售后申请有效期为订单签收后30天，定制类、生鲜类商品为签收后7天。超过有效期后，仅商品出现质量问题可联系客服协商处理，无质量问题不予受理。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-invoice-reissue&prm=1.34.182.0",
+        "question": "订单发票开错了，能重新开具吗？",
+        "answer": "若发票信息填写错误，可在开具后7天内联系客服申请重新开具，需先将错误发票作废（电子发票无需退回），客服核实后会在1-2个工作日内重新开具正确发票。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-logistics-problem&prm=1.34.183.0",
+        "question": "物流显示“派送中”但长时间未收到包裹，该怎么办？",
+        "answer": "您可先联系当地物流商核实派送情况，若物流商无法解决，可在“我的订单”中点击“物流异常申诉”，提交相关信息，客服会在1个工作日内协助您跟进处理。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-points-refund&prm=1.34.184.0",
+        "question": "使用积分抵扣的订单取消后，积分会返还吗？",
+        "answer": "使用积分抵扣的订单取消后，若积分未过期，会全额返还至您的账户；若积分已过期，返还的积分有效期会延长30天。返还的积分可用于后续订单抵扣。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-delivery-signature&prm=1.34.185.0",
+        "question": "订单包裹可以要求无接触配送吗？",
+        "answer": "您可在下单时的“订单备注”中注明“无接触配送”，或在物流显示“派送中”时联系当地配送员说明，配送员会按要求将包裹放置在指定位置（如门口、快递柜）。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-price-protection&prm=1.34.186.0",
+        "question": "下单后商品降价了，可以申请价格保护吗？",
+        "answer": "支持订单签收前7天的价格保护，您可在“我的订单”中点击“价格保护申请”，上传商品当前价格截图，客服核实后会将差价以余额形式返还至您的账户。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-packaging-request&prm=1.34.187.0",
+        "question": "可以要求订单包裹使用加固包装吗？",
+        "answer": "您可在订单备注中注明“加固包装”，仓库会根据商品特性（如易碎品）免费使用气泡膜、硬纸盒等加固包装；若需特殊加固材料（如木箱），需额外支付少量包装费用。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-export-declaration&prm=1.34.188.0",
+        "question": "如何获取订单的出口报关相关文件？",
+        "answer": "您可在“我的订单”中找到已发货订单，点击“申请报关文件”，选择需要的文件类型（如商业发票、装箱单），系统会自动生成并发送至您的邮箱，也可联系客服协助开具。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-auto-cancel-rule&prm=1.34.189.0",
+        "question": "未付款订单的自动取消规则是什么？",
+        "answer": "未付款订单会在提交后24小时自动取消，预售订单自动取消时间为提交后48小时。若您需保留订单，可在超时前点击“延长付款时间”，最多延长24小时。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-return-address&prm=1.34.190.0",
+        "question": "退货时，不同订单的退货地址是一样的吗？",
+        "answer": "不同品类、不同仓库发出的订单，退货地址可能不同。申请退货后，系统会为您的订单匹配专属退货地址，该地址仅适用于当前订单，请勿使用其他订单的退货地址。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-track-no-show&prm=1.34.191.0",
+        "question": "订单显示“已发货”但无物流单号，该怎么办？",
+        "answer": "订单发货后，物流单号会在1-2小时内同步至系统，若超过2小时仍未显示，可点击“我的订单”中的“刷新物流信息”，或联系客服核实仓库是否已完成物流单号录入。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-gift-wrap&prm=1.34.192.0",
+        "question": "可以给订单中的商品添加礼品包装吗？",
+        "answer": "支持礼品包装服务，您可在下单时勾选“礼品包装”选项，需额外支付少量包装费用，仓库会按要求包装并附赠贺卡（可填写祝福语）。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-partial-return&prm=1.34.193.0",
+        "question": "一个订单中的多件商品，可以只退货其中一部分吗？",
+        "answer": "支持部分退货，您可在售后申请中选择需要退货的商品，仅需退回选中商品即可，未退货商品会保留订单完成状态，退款金额按退货商品金额计算。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-payment-installment&prm=1.34.194.0",
+        "question": "订单可以申请分期付款吗？支持哪些分期方式？",
+        "answer": "部分国家/地区支持订单分期付款，结算页面会显示“分期付款”选项，支持的方式包括信用卡分期、PayPal分期，分期期数为3/6/12期，具体以页面显示为准。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-delivery-holiday&prm=1.34.195.0",
+        "question": "可以指定订单的配送日期（避开节假日）吗？",
+        "answer": "您可在订单备注中注明希望的配送日期（需在物流时效范围内），配送商会尽量按您的要求安排；但偏远地区、节假日配送资源紧张时，可能无法完全满足，敬请谅解。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-completed-refund&prm=1.34.196.0",
+        "question": "订单显示“已完成”，还能申请退款吗？",
+        "answer": "订单完成后，若商品存在质量问题、错发漏发等情况，可在签收后30天内申请退款；若无质量问题，仅支持退换货（部分商品不支持无理由退换），无法直接申请退款。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-shipping-method-change&prm=1.34.197.0",
+        "question": "订单未发货，能更换物流配送方式吗？",
+        "answer": "订单未发货时，可联系客服申请更换配送方式（如标准物流换加急物流），更换后需补足运费差价，客服核实后会修改订单物流信息，不影响发货时效。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-receipt-download&prm=1.34.198.0",
+        "question": "如何下载订单的电子收据/消费凭证？",
+        "answer": "在“我的订单”中找到对应订单，点击“订单详情-下载凭证”，可选择下载电子收据或消费凭证（PDF格式），该凭证包含订单金额、商品信息、支付方式等，可作为消费证明。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-blacklist-address&prm=1.34.199.0",
+        "question": "订单收货地址被系统标记为异常，该怎么处理？",
+        "answer": "地址异常可能是因多次拒收、地址不详等原因导致，您可联系客服提供地址证明（如身份证、居住证明），客服核实后会解除地址异常标记，订单即可正常发货。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-bulk-purchase-discount&prm=1.34.200.0",
+        "question": "批量下单（多个相同订单）有额外折扣吗？",
+        "answer": "批量下单可联系客服申请批发折扣，折扣力度根据下单数量、商品品类而定。建议先提交一个试用订单，确认商品符合要求后，再联系客服协商批量订单的折扣和发货方案。",
+        "label": "我的订单"
+    },
+    {
+        "url": "https://www.lightinthebox.com/knowledge-base/?page_key=order-delivery-failure&prm=1.34.201.0",
+        "question": "订单配送失败被退回，重新发货需要支付运费吗？",
+        "answer": "若因地址错误、无人签收等个人原因导致配送失败，重新发货需支付二次运费；若因物流商、仓库原因导致配送失败，重新发货免费，客服会主动联系您安排。",
+        "label": "我的订单"
     }
 ]
