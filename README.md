@@ -6,7 +6,7 @@
 [![FAISS](https://img.shields.io/badge/FAISS-Hybrid%20Search-0055FF)](https://github.com/facebookresearch/faiss)
 
 一个可运行的 `Skill-first + FAISS + BM25 + LangGraph` RAG 系统，支持多模型厂商、分层记忆、Web 聊天界面，以及本地 `FAISS 稠密召回 + BM25 稀疏召回` 混合检索。
-
+![Architecture Diagram](15dc699c1a9a49f450de5946c27baff7.png)
 ## 目录
 
 1. [项目简介](#项目简介)
